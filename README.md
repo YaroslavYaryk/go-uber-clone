@@ -1,26 +1,45 @@
-# "Microservices with Go" course project
+# Ride-Sharing Microservices (Uber Clone)
 
-This is the starter code for the "Microservices with Go" project.
+A production-style, event-driven ride-sharing platform built with Go microservices, RabbitMQ, gRPC, MongoDB, Stripe payments, and a Next.js frontend — deployed on Kubernetes with Tilt for local development.
+
+> Based on the "Microservices with Go" course. Check it out at: https://www.selfmadeengineer.com/
 
 ## Project overview
 
-In this project‑driven course, you’ll build the backend microservices system for a Uber‑style ride‑sharing app from the ground up—using Go, Docker, and Kubernetes.
+Four Go microservices communicate through a RabbitMQ topic exchange and gRPC:
 
-By the end, you’ll have a fully deployed, horizontally scalable ride‑sharing system that’s ready for real traffic. Plus, you’ll walk away with reusable template for building future distributed projects—accelerating your path to become a lead engineer.
+| Service | Role |
+|---|---|
+| **api-gateway** | HTTP + WebSocket entry point; routes messages between browser clients and backend services |
+| **trip-service** | Manages trips, fares, and routes; persists to MongoDB; calls OSRM for routing |
+| **driver-service** | Maintains in-memory driver registry; matches trips to drivers via geohash |
+| **payment-service** | Creates Stripe Checkout sessions and processes payment webhooks |
 
-Check it out at: https://www.selfmadeengineer.com/
+The web frontend (`web/`) is a Next.js 15 app with Leaflet maps, real-time WebSocket updates, and Stripe.js for payments.
+
+For a full deep-dive into the architecture, message flows, API contracts, and development guide see **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
 
 ## Trip Scheduling Flow
 [![](https://mermaid.ink/img/pako:eNqNVt9v2jAQ_lcsP21qGvGjZSEPlSpaTX1YxWDVpAmpMvZBIkicOQ6UVf3fd4mdEgcKzQOK47v7vjt_d-aVcimAhnSW5vC3gJTDXcyWiiWzlOCTMaVjHmcs1eQpB3X49Xb88J1p2LLd4d4vFWdTUJuYw-HmnYo3oM5sH34fs10Cqf7Qb6oRFL-bnZLz5c3NnmRIRgrwteJGJmXOuTa2eyP0aFAPyXIyHtWO5YaxN7-PEoNJpNrM1nOSCw3Y_QuPWLq0nBvWl4h30fIos_Bhg5n6vMIVDTgVLyNN5II4LO9L65A8wrbyJimAyAkjwlbSBHBwENisQ2vl80T4pfezapbGRW1RHckkYaloILMNi9dsvgYXtHUQv2E-lXwF-hCccQ5ZE3sNiwZ0A_O2sjSw6oPTbB_nWbT3TB3dGEiykGrLlABBtCQTNp_H-sdP8sUwK3EmkGcS2-lnAQV8rUtwVCchGSvJIc8tJ2KoMGxDjxSZKIVapZZrpovc9_2j4nF7whGPifvM8jxepp8XkW2SzAQmOVKMZXoyF6_Nwq5bunetkLxp2HfIUQR8JQts5Bqz9DJGx3K1ZtZdHAVpCc9mZStkc3s-0WZtTFukOsGnB5QeE7u6PM4gKScQsozktmF_TmuN1qidUHZJa6q9V04m2RowlrV1SnbQc5GUq33YacFL_R2faHtPzxXt0ZN1O-6iXbRW1Zu4HxeiqjTJivk6ziPTcp-U1aXD-NPgZ46a21KL061Qj6kzc38_facarzCyv1tOdGgVk7OUpCipOSxjZEI9moBKWCzwKn8tQ8yojiCBGQ3xVTC1muEV_4Z2rNByuks5DbUqwKNKFsuIhgu2znFlZo79C1Cb4L36R8rmkoav9IWGvW_-1XVn0O_1-kE3GAyHgUd3-Lnb8fu9frc_xKfbvQ6CN4_-qyJ0_KDX7Q86QTDoDAfD66ve23_1IPGQ?type=png)](https://mermaid.live/edit#pako:eNqNVt9v2jAQ_lcsP21qGvGjZSEPlSpaTX1YxWDVpAmpMvZBIkicOQ6UVf3fd4mdEgcKzQOK47v7vjt_d-aVcimAhnSW5vC3gJTDXcyWiiWzlOCTMaVjHmcs1eQpB3X49Xb88J1p2LLd4d4vFWdTUJuYw-HmnYo3oM5sH34fs10Cqf7Qb6oRFL-bnZLz5c3NnmRIRgrwteJGJmXOuTa2eyP0aFAPyXIyHtWO5YaxN7-PEoNJpNrM1nOSCw3Y_QuPWLq0nBvWl4h30fIos_Bhg5n6vMIVDTgVLyNN5II4LO9L65A8wrbyJimAyAkjwlbSBHBwENisQ2vl80T4pfezapbGRW1RHckkYaloILMNi9dsvgYXtHUQv2E-lXwF-hCccQ5ZE3sNiwZ0A_O2sjSw6oPTbB_nWbT3TB3dGEiykGrLlABBtCQTNp_H-sdP8sUwK3EmkGcS2-lnAQV8rUtwVCchGSvJIc8tJ2KoMGxDjxSZKIVapZZrpovc9_2j4nF7whGPifvM8jxepp8XkW2SzAQmOVKMZXoyF6_Nwq5bunetkLxp2HfIUQR8JQts5Bqz9DJGx3K1ZtZdHAVpCc9mZStkc3s-0WZtTFukOsGnB5QeE7u6PM4gKScQsozktmF_TmuN1qidUHZJa6q9V04m2RowlrV1SnbQc5GUq33YacFL_R2faHtPzxXt0ZN1O-6iXbRW1Zu4HxeiqjTJivk6ziPTcp-U1aXD-NPgZ46a21KL061Qj6kzc38_facarzCyv1tOdGgVk7OUpCipOSxjZEI9moBKWCzwKn8tQ8yojiCBGQ3xVTC1muEV_4Z2rNByuks5DbUqwKNKFsuIhgu2znFlZo79C1Cb4L36R8rmkoav9IWGvW_-1XVn0O_1-kE3GAyHgUd3-Lnb8fu9frc_xKfbvQ6CN4_-qyJ0_KDX7Q86QTDoDAfD66ve23_1IPGQ)
 
 
+## Tech stack
+
+**Backend:** Go 1.23, gRPC / protobuf, RabbitMQ (AMQP 0-9-1), MongoDB, Stripe Go SDK, Gorilla WebSocket, OpenTelemetry (Jaeger — optional)
+
+**Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS, Leaflet / react-leaflet, Stripe.js
+
+**Infrastructure:** Kubernetes (Minikube for local), Docker, Tilt, `kubectl`
+
 ## Installation
+
 The project requires a couple tools to run, most of which are part of many developer's toolchains.
 
 - Docker
-- Go
+- Go 1.23+
 - Tilt
-- A local Kubernetes cluster
+- A local Kubernetes cluster (Minikube recommended)
+- MongoDB (running locally or in-cluster)
 
 ### MacOS
 
@@ -38,6 +57,47 @@ brew install go
 ```
 
 6. Make sure [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/) is installed.
+
+### Linux (Ubuntu / Debian)
+
+1. Install Go:
+```bash
+wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
+go version
+```
+
+2. Install Docker: follow [Docker's official docs](https://docs.docker.com/engine/install/ubuntu/)
+
+3. Install Minikube:
+```bash
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+minikube start --driver=docker
+```
+
+4. Install Tilt:
+```bash
+curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
+```
+
+5. Install kubectl: follow [Kubernetes official docs](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+
+6. Install and configure MongoDB to accept external connections (required for the trip-service pod to reach your local Mongo):
+```bash
+sudo apt install mongodb-org
+# Allow connections from all interfaces
+sudo sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
+sudo systemctl restart mongod
+```
+
+Then update `infra/development/k8s/secrets.yaml` with the Minikube host gateway IP:
+```bash
+# Find the host IP as seen from inside Minikube
+minikube ssh "ip route | grep default" | awk '{print $3}'
+# Update the uri field in secrets.yaml, e.g. mongodb://192.168.49.1:27017
+```
 
 ### Windows (WSL)
 
@@ -81,8 +141,19 @@ go version
 ## Run
 
 ```bash
+# Start Minikube if not already running
+minikube start
+
+# Point Docker to Minikube's registry
+eval $(minikube docker-env)
+
+# Start all services with live-reload
 tilt up
 ```
+
+Open the Tilt UI at http://localhost:10350 to watch build/deploy status.
+
+The frontend runs at http://localhost:3000 and the API gateway at http://localhost:8081.
 
 ## Monitor
 
@@ -90,11 +161,27 @@ tilt up
 kubectl get pods
 ```
 
-or
-
 ```bash
 minikube dashboard
 ```
+
+```bash
+# Stream logs from a specific service
+kubectl logs -f deployment/trip-service
+kubectl logs -f deployment/driver-service
+kubectl logs -f deployment/api-gateway
+kubectl logs -f deployment/payment-service
+```
+
+## Stripe webhooks (local development)
+
+The payment service needs to receive Stripe webhook events locally. Use the Stripe CLI:
+
+```bash
+stripe listen --forward-to localhost:8081/webhook/stripe
+```
+
+Copy the printed webhook signing secret into `infra/development/k8s/secrets.yaml` under `stripe-webhook-key`.
 
 ## Deployment (Google Cloud example)
 It's advisable to first run the steps manually and then build a proper CI/CD flow according to your infrastructure.
