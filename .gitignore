@@ -55,5 +55,5 @@ coverage/
 *.tmp
 *.temp
 
-linfra/development/k8s/secrets.yaml
+infra/development/k8s/secrets.yaml
 infra/production/k8s/secrets.yaml
