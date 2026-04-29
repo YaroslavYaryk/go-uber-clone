@@ -5,6 +5,7 @@ import { Coordinate, Driver, Route, RouteFare, Trip } from "./types";
 export enum BackendEndpoints {
   PREVIEW_TRIP = "/trip/preview",
   START_TRIP = "/trip/start",
+  CANCEL_TRIP = "/trip/cancel",
   WS_DRIVERS = "/drivers",
   WS_RIDERS = "/riders",
 }
@@ -19,17 +20,21 @@ export enum TripEvents {
   DriverTripRequest = "driver.cmd.trip_request",
   DriverTripAccept = "driver.cmd.trip_accept",
   DriverTripDecline = "driver.cmd.trip_decline",
+  DriverTripCancelled = "driver.cmd.trip_cancelled",
   DriverRegister = "driver.cmd.register",
   PaymentSessionCreated = "payment.event.session_created",
+  PaymentSuccess = "payment.event.success",
 }
 
 // Messages sent from the server to the client via the websocket
 export type ServerWsMessage =
   | PaymentSessionCreatedRequest
+  | PaymentSuccessRequest
   | DriverAssignedRequest
   | DriverLocationRequest
   | DriverTripRequest
   | DriverRegisterRequest
+  | DriverTripCancelledRequest
   | TripCreatedRequest
   | NoDriversFoundRequest;
 
@@ -54,6 +59,11 @@ interface DriverTripRequest {
   data: Trip;
 }
 
+interface DriverTripCancelledRequest {
+  type: TripEvents.DriverTripCancelled;
+  data: null;
+}
+
 export interface PaymentEventSessionCreatedData {
   tripID: string;
   sessionID: string;
@@ -64,6 +74,11 @@ export interface PaymentEventSessionCreatedData {
 interface PaymentSessionCreatedRequest {
   type: TripEvents.PaymentSessionCreated;
   data: PaymentEventSessionCreatedData;
+}
+
+interface PaymentSuccessRequest {
+  type: TripEvents.PaymentSuccess;
+  data: { tripID: string; userID: string; driverID: string };
 }
 
 interface DriverAssignedRequest {

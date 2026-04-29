@@ -11,6 +11,15 @@ interface DriverTripOverviewProps {
 }
 
 export const DriverTripOverview = ({ trip, status, onAcceptTrip, onDeclineTrip }: DriverTripOverviewProps) => {
+  if (status === TripEvents.DriverTripCancelled) {
+    return (
+      <TripOverviewCard
+        title="Trip cancelled"
+        description="The rider has cancelled this trip request."
+      />
+    )
+  }
+
   if (!trip) {
     return (
       <TripOverviewCard

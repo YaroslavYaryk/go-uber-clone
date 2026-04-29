@@ -8,7 +8,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import dynamic from 'next/dynamic'
 import { Button } from "../components/ui/button";
 import { useState, Suspense } from "react";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { CarPackageSlug } from '../types';
 import { DriverPackageSelector } from '../components/DriverPackageSelector';
 
@@ -31,7 +31,6 @@ if (typeof window !== 'undefined') {
 
 function HomeContent() {
   const [userType, setUserType] = useState<"driver" | "rider" | null>(null)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const payment = searchParams.get("payment")
   const [packageSlug, setPackageSlug] = useState<CarPackageSlug | null>(null)
@@ -43,26 +42,7 @@ function HomeContent() {
   if (payment === 'success') {
     return (
       <main className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-        <div className="flex flex-col items-center justify-center h-screen gap-6 px-4">
-          <div className="bg-white p-8 rounded-2xl shadow-lg text-center max-w-md w-full">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">Payment Successful!</h1>
-              <p className="text-gray-600 mt-2">Your ride has been confirmed.</p>
-            </div>
-            <Button
-              className="w-full text-lg py-6"
-              variant="outline"
-              onClick={() => router.push("/")}
-            >
-              Return Home
-            </Button>
-          </div>
-        </div>
+        <RiderMap />
       </main>
     )
   }

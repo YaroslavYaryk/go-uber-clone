@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: europe-west1-docker.pkg.dev/{{PROJECT_ID}}/ride-sharing/api-gateway
+          image: europe-west1-docker.pkg.dev/ride-sharing-k8k-494016/ride-sharing/api-gateway:latest
           ports:
             - containerPort: 8081
           env:

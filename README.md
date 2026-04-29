@@ -113,16 +113,16 @@ Production folder needs to contain a secrets.yaml for the production environment
 Build all docker images and tag them accordingly to push to Artifact Registry.
 ```bash
 # Build the Api gateway 
-docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/api-gateway:latest --platform linux/amd64 -f infra/production/docker/api-gateway.Dockerfile .
+docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/api-gateway:latest --platform linux/amd64 -f infra/production/docker/api-gateway.payment-service.Dockerfile .
 
 # Build the Driver service 
-docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/driver-service:latest --platform linux/amd64 -f infra/production/docker/driver-service.Dockerfile .
+docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/driver-service:latest --platform linux/amd64 -f infra/production/docker/driver-service.payment-service.Dockerfile .
 
 # Build the Trip service 
-docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/trip-service:latest --platform linux/amd64 -f infra/production/docker/trip-service.Dockerfile .
+docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/trip-service:latest --platform linux/amd64 -f infra/production/docker/trip-service.payment-service.Dockerfile .
 
 # Build the Payment service 
-docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/payment-service:latest --platform linux/amd64 -f infra/production/docker/payment-service.Dockerfile .
+docker build -t {REGION}-docker.pkg.dev/{PROJECT_ID}/ride-sharing/payment-service:latest --platform linux/amd64 -f infra/production/docker/payment-service.payment-service.Dockerfile .
 ```
 
 ## 3. Create a Artifact Registry repository
@@ -168,7 +168,7 @@ kubectl apply -f infra/production/k8s/api-gateway-deployment.yaml
 # Wait until the API is up and then do the next and so on...
 kubectl apply -f infra/production/k8s/driver-service-deployment.yaml
 kubectl apply -f infra/production/k8s/trip-service-deployment.yaml
-kubectl apply -f infra/production/k8s/payment-service-deployment.yaml
+kubectl apply -f infra/production/k8s/payment-service-deployment.yaml.yaml
 ```
 
 If you need to redeploy you can use the same command above or just `kubectl apply -f infra/production/k8s`

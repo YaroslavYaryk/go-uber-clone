@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"ride-sharing/shared/messaging"
 	"syscall"
 	"time"
 
@@ -13,7 +14,8 @@ import (
 )
 
 var (
-	httpAddr = env.GetString("HTTP_ADDR", ":8081")
+	httpAddr    = env.GetString("HTTP_ADDR", ":8081")
+	rabbitmqURI = env.GetString("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/")
 )
 
 func main() {
@@ -21,10 +23,31 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	//RabbitMQ connection
+	rabbitmq, err := messaging.NewRabbitMQ(rabbitmqURI)
+	if err != nil {
+		log.Fatalf("failed to connect to RabbitMQ: %v", err)
+	}
+	defer rabbitmq.Close()
+
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+
+	startConsumers(appCtx, rabbitmq)
+
 	mux.HandleFunc("POST /trip/preview", enableCORS(handleTripPreview))
 	mux.HandleFunc("POST /trip/start", enableCORS(handleTripStart))
-	mux.HandleFunc("/ws/drivers", handleDriverWebSocket)
+	mux.HandleFunc("POST /trip/cancel", enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		handleTripCancel(w, r, rabbitmq)
+	}))
+	mux.HandleFunc("/ws/drivers", func(w http.ResponseWriter, r *http.Request) {
+		handleDriverWebSocket(w, r, rabbitmq)
+	})
 	mux.HandleFunc("/ws/riders", handleRiderWebSocket)
+
+	mux.HandleFunc("/webhook/stripe", func(w http.ResponseWriter, r *http.Request) {
+		handleStripeWebhook(w, r, rabbitmq)
+	})
 
 	server := &http.Server{
 		Addr:    httpAddr,
@@ -37,6 +60,8 @@ func main() {
 		log.Printf("Server listening on %s", httpAddr)
 		serverErrors <- server.ListenAndServe()
 	}()
+
+	log.Println("Connected to RabbitMQ")
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)

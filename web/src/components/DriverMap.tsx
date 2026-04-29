@@ -14,8 +14,8 @@ import { DriverCard } from "./DriverCard";
 import { TripEvents } from "../contracts";
 
 const START_LOCATION: Coordinate = {
-  latitude: 37.7749,
-  longitude: -122.4194,
+  latitude: 49.8397,
+  longitude: 24.0297,
 }
 
 const driverMarker = new L.Icon({
@@ -31,7 +31,7 @@ const startLocationMarker = new L.Icon({
 });
 
 const destinationMarker = new L.Icon({
-  iconUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Map_pin_icon.svg/176px-Map_pin_icon.svg.png",
+  iconUrl: "https://img.icons8.com/color/48/marker.png",
   iconSize: [40, 40], // Size of the marker
   iconAnchor: [20, 40], // Anchor point
 });

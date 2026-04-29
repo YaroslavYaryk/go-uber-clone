@@ -6,15 +6,24 @@ import { MapContainer, Marker, Popup, Rectangle, TileLayer } from 'react-leaflet
 import L from 'leaflet';
 import { getGeohashBounds } from '../utils/geohash';
 import { useMemo, useRef, useState } from 'react';
+import { useDriverRoute } from '../hooks/useDriverRoute';
 import { MapClickHandler } from './MapClickHandler';
 import { Button } from './ui/button';
 import { RouteFare, RequestRideProps, TripPreview, HTTPTripStartResponse } from "../types";
 import { RoutingControl } from "./RoutingControl";
+import { Polyline } from 'react-leaflet';
 import { API_URL } from '../constants';
 import { RiderTripOverview } from './RiderTripOverview';
 import { BackendEndpoints, HTTPTripPreviewRequestPayload, HTTPTripPreviewResponse, HTTPTripStartRequestPayload } from '../contracts';
+import { useRouter } from 'next/navigation';
 
 const userMarker = new L.Icon({
+    iconUrl: "https://www.svgrepo.com/show/535711/user.svg",
+    iconSize: [40, 40], // Size of the marker
+    iconAnchor: [20, 40], // Anchor point
+});
+
+const userDestinationMarker = new L.Icon({
     iconUrl: "https://img.icons8.com/color/48/marker.png",
     iconSize: [40, 40], // Size of the marker
     iconAnchor: [20, 40], // Anchor point
@@ -31,16 +40,34 @@ interface RiderMapProps {
 }
 
 export default function RiderMap({ onRouteSelected }: RiderMapProps) {
-    const [trip, setTrip] = useState<TripPreview | null>(null)
+    const router = useRouter()
+    const isPaymentReturn = typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('payment') === 'success'
+
+    const [trip, setTrip] = useState<TripPreview | null>(() => {
+        if (typeof window === 'undefined' || !isPaymentReturn) return null
+        const stored = localStorage.getItem('rider_trip')
+        return stored ? JSON.parse(stored) as TripPreview : null
+    })
     const [selectedCarPackage] = useState<RouteFare | null>(null)
-    const [destination, setDestination] = useState<[number, number] | null>(null)
+    const [destination, setDestination] = useState<[number, number] | null>(() => {
+        if (typeof window === 'undefined' || !isPaymentReturn) return null
+        const stored = localStorage.getItem('rider_destination')
+        return stored ? JSON.parse(stored) as [number, number] : null
+    })
     const mapRef = useRef<L.Map>(null)
-    const userID = useMemo(() => crypto.randomUUID(), [])
+    const userID = useMemo(() => {
+        const stored = localStorage.getItem('rider_user_id')
+        if (stored) return stored
+        const id = crypto.randomUUID()
+        localStorage.setItem('rider_user_id', id)
+        return id
+    }, [])
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const location = {
-        latitude: 37.7749,
-        longitude: -122.4194,
+        latitude: 49.8397,
+        longitude: 24.0297,
     };
 
     const {
@@ -51,6 +78,11 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
         paymentSession,
         resetTripStatus
     } = useRiderStreamConnection(location, userID);
+
+    const { route: driverRoute, durationSeconds: driverEta } = useDriverRoute(
+        location,
+        assignedDriver?.location ?? null
+    );
 
     console.log(tripStatus)
 
@@ -125,23 +157,34 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
             method: 'POST',
             body: JSON.stringify(payload),
         })
-        const data = await response.json() as HTTPTripStartResponse
+        const { data } = await response.json() as { data: HTTPTripStartResponse }
 
         if (response.ok && trip) {
-            setTrip((prev) => ({
-                ...prev,
-                tripID: data.tripID,
-            } as TripPreview))
-
+            const updatedTrip = { ...trip, tripID: data.tripID } as TripPreview
+            setTrip(updatedTrip)
+            localStorage.setItem('rider_trip', JSON.stringify(updatedTrip))
+            localStorage.setItem('rider_destination', JSON.stringify(destination))
         }
 
         return data
     }
 
-    const handleCancelTrip = () => {
+    const handleCancelTrip = async () => {
+        if (trip?.tripID) {
+            await fetch(`${API_URL}${BackendEndpoints.CANCEL_TRIP}`, {
+                method: 'POST',
+                body: JSON.stringify({ tripID: trip.tripID, userID }),
+            }).catch((err) => console.error('failed to cancel trip:', err))
+        }
+
         setTrip(null)
         setDestination(null)
         resetTripStatus()
+        localStorage.removeItem('rider_trip')
+        localStorage.removeItem('rider_destination')
+        if (new URLSearchParams(window.location.search).get('payment') === 'success') {
+            router.push('/')
+        }
     }
 
     if (error) {
@@ -204,7 +247,7 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
                         </Marker>
                     ))}
                     {destination && (
-                        <Marker position={destination} icon={userMarker}>
+                        <Marker position={destination} icon={userDestinationMarker}>
                             <Popup>Destination</Popup>
                         </Marker>
                     )}
@@ -219,6 +262,9 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
                     {trip && (
                         <RoutingControl route={trip.route} />
                     )}
+                    {driverRoute && (
+                        <Polyline positions={driverRoute} color="green" dashArray="8" weight={3} />
+                    )}
                     <MapClickHandler onClick={handleMapClick} />
                 </MapContainer>
             </div>
@@ -229,6 +275,7 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
                     assignedDriver={assignedDriver}
                     status={tripStatus}
                     paymentSession={paymentSession}
+                    driverEtaSeconds={driverEta}
                     onPackageSelect={handleStartTrip}
                     onCancel={handleCancelTrip}
                 />

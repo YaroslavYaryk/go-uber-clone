@@ -60,6 +60,9 @@ export const useDriverStreamConnection = ({
         case TripEvents.DriverRegister:
           setDriver(message.data);
           break;
+        case TripEvents.DriverTripCancelled:
+          setRequestedTrip(null);
+          break;
       }
 
 

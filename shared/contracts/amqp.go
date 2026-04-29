@@ -13,13 +13,15 @@ const (
 	TripEventDriverAssigned      = "trip.event.driver_assigned"
 	TripEventNoDriversFound      = "trip.event.no_drivers_found"
 	TripEventDriverNotInterested = "trip.event.driver_not_interested"
+	TripEventCancelled           = "trip.event.cancelled"
 
 	// Driver commands (driver.cmd.*)
-	DriverCmdTripRequest = "driver.cmd.trip_request"
-	DriverCmdTripAccept  = "driver.cmd.trip_accept"
-	DriverCmdTripDecline = "driver.cmd.trip_decline"
-	DriverCmdLocation    = "driver.cmd.location"
-	DriverCmdRegister    = "driver.cmd.register"
+	DriverCmdTripRequest   = "driver.cmd.trip_request"
+	DriverCmdTripAccept    = "driver.cmd.trip_accept"
+	DriverCmdTripDecline   = "driver.cmd.trip_decline"
+	DriverCmdTripCancelled = "driver.cmd.trip_cancelled"
+	DriverCmdLocation      = "driver.cmd.location"
+	DriverCmdRegister      = "driver.cmd.register"
 
 	// Payment events (payment.event.*)
 	PaymentEventSessionCreated = "payment.event.session_created"

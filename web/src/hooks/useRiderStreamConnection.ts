@@ -4,11 +4,23 @@ import { Trip } from '../types';
 import { Driver, Coordinate } from '../types';
 import { PaymentEventSessionCreatedData, TripEvents, ServerWsMessage, isValidWsMessage, BackendEndpoints } from '../contracts';
 
+const ASSIGNED_DRIVER_KEY = 'rider_assigned_driver';
+
 export function useRiderStreamConnection(location: Coordinate, userID: string) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [tripStatus, setTripStatus] = useState<TripEvents | null>(null);
+  const [tripStatus, setTripStatus] = useState<TripEvents | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('payment') === 'success'
+      ? TripEvents.PaymentSuccess
+      : null;
+  });
   const [paymentSession, setPaymentSession] = useState<PaymentEventSessionCreatedData | null>(null);
-  const [assignedDriver, setAssignedDriver] = useState<Trip["driver"] | null>(null);
+  const [assignedDriver, setAssignedDriver] = useState<Trip["driver"] | null>(() => {
+    if (typeof window === 'undefined') return null;
+    if (new URLSearchParams(window.location.search).get('payment') !== 'success') return null;
+    const stored = localStorage.getItem(ASSIGNED_DRIVER_KEY);
+    return stored ? JSON.parse(stored) as Driver : null;
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,6 +57,9 @@ export function useRiderStreamConnection(location: Coordinate, userID: string) {
           setTripStatus(message.type);
           break;
         case TripEvents.DriverAssigned:
+          if (message.data.driver) {
+            localStorage.setItem(ASSIGNED_DRIVER_KEY, JSON.stringify(message.data.driver));
+          }
           setAssignedDriver(message.data.driver);
           setTripStatus(message.type);
           break;
@@ -52,6 +67,9 @@ export function useRiderStreamConnection(location: Coordinate, userID: string) {
           setTripStatus(message.type);
           break;
         case TripEvents.NoDriversFound:
+          setTripStatus(message.type);
+          break;
+        case TripEvents.PaymentSuccess:
           setTripStatus(message.type);
           break;
       }
@@ -78,6 +96,7 @@ export function useRiderStreamConnection(location: Coordinate, userID: string) {
   const resetTripStatus = () => {
     setTripStatus(null);
     setPaymentSession(null);
+    localStorage.removeItem(ASSIGNED_DRIVER_KEY);
   }
 
   return { drivers, assignedDriver, error, tripStatus, paymentSession, resetTripStatus };

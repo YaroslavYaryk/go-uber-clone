@@ -14,6 +14,7 @@ interface TripOverviewProps {
   status: TripEvents | null;
   assignedDriver?: Driver | null;
   paymentSession?: PaymentEventSessionCreatedData | null;
+  driverEtaSeconds?: number | null;
   onPackageSelect: (carPackage: RouteFare) => void;
   onCancel: () => void;
 }
@@ -23,9 +24,31 @@ export const RiderTripOverview = ({
   status,
   assignedDriver,
   paymentSession,
+  driverEtaSeconds,
   onPackageSelect,
   onCancel,
 }: TripOverviewProps) => {
+  if (status === TripEvents.PaymentSuccess) {
+    return (
+      <TripOverviewCard
+        title="Payment confirmed!"
+        description="Your payment was successful. Your driver is on the way!"
+      >
+        <div className="flex flex-col gap-4">
+          {assignedDriver && <DriverCard driver={assignedDriver} />}
+          {driverEtaSeconds != null && (
+            <p className="text-sm text-gray-600 text-center">
+              Driver arrives in ~{convertSecondsToMinutes(driverEtaSeconds)} min
+            </p>
+          )}
+          <Button variant="outline" className="w-full" onClick={onCancel}>
+            Done
+          </Button>
+        </div>
+      </TripOverviewCard>
+    )
+  }
+
   if (!trip) {
     return (
       <TripOverviewCard
@@ -47,6 +70,9 @@ export const RiderTripOverview = ({
           <div className="text-sm text-gray-500">
             <p>Amount: {paymentSession.amount} {paymentSession.currency}</p>
             <p>Trip ID: {paymentSession.tripID}</p>
+            {driverEtaSeconds != null && (
+              <p>Driver arrives in ~{convertSecondsToMinutes(driverEtaSeconds)} min</p>
+            )}
           </div>
           <StripePaymentButton paymentSession={paymentSession} />
         </div>
@@ -73,9 +99,11 @@ export const RiderTripOverview = ({
         title="Driver assigned!"
         description="Your driver is on the way, waiting for payment confirmation to show..."
       >
-        <div className="flex flex-col space-y-3 justify-center items-center mb-4">
-          {/* <p>Driver: {trip.id}</p> */}
-        </div>
+        {driverEtaSeconds != null && (
+          <p className="text-sm text-gray-600 text-center">
+            Pickup in ~{convertSecondsToMinutes(driverEtaSeconds)} min
+          </p>
+        )}
         <Button variant="destructive" className="w-full" onClick={onCancel}>
           Cancel current trip
         </Button>

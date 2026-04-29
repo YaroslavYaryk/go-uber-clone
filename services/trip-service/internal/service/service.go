@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"ride-sharing/services/trip-service/internal/domain"
 	tripTypes "ride-sharing/services/trip-service/pkg/types"
+	pbd "ride-sharing/shared/proto/driver"
 	"ride-sharing/shared/proto/trip"
 	"ride-sharing/shared/types"
 
@@ -33,6 +34,14 @@ func (service *Service) CreateTrip(ctx context.Context, fare *domain.RiderFareMo
 	}
 
 	return service.repo.CreateTrip(ctx, &t)
+}
+
+func (s *Service) GetTripByID(ctx context.Context, id string) (*domain.TripModel, error) {
+	return s.repo.GetTripByID(ctx, id)
+}
+
+func (s *Service) UpdateTrip(ctx context.Context, tripID string, status string, driver *pbd.Driver) error {
+	return s.repo.UpdateTrip(ctx, tripID, status, driver)
 }
 
 func (service *Service) GetRoute(ctx context.Context, pickup *types.Coordinate, destination *types.Coordinate) (*tripTypes.OsrmAPIResponse, error) {
